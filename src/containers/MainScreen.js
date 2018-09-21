@@ -54,10 +54,6 @@ export default class MainScreen extends Component {
         clearInterval(this.intervalId);
     }
 
-    componentDidUpdate() {
-        console.log(this.state.safeZones);
-    }
-
     askLocationPermission = async function () {
         if (Platform.OS === 'android') {
             const {status} = await Permissions.askAsync(Permissions.LOCATION);
@@ -73,12 +69,42 @@ export default class MainScreen extends Component {
         }, 2000);
     }
 
+    getDistance(lat1, lon1, lat2, lon2) {
+        let radlat1 = Math.PI * lat1 / 180;
+        let radlat2 = Math.PI * lat2 / 180;
+        let theta = lon1 - lon2;
+        let radtheta = Math.PI * theta / 180;
+        let dist = Math.sin(radlat1) * Math.sin(radlat2) + Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+        if (dist > 1) {
+            dist = 1;
+        }
+        dist = Math.acos(dist);
+        dist = dist * 180 / Math.PI;
+        dist = dist * 60 * 1.1515;
+        dist = dist * 1.609344;
+        return dist
+    }
+
     _getLocationAsync = async () => {
         let location = await Location.getCurrentPositionAsync({
             enableHighAccuracy: true,
             maximumAge: 1999
         });
-        this.setState({location});
+
+        let safeZones = this.state.safeZones;
+        safeZones.map((safeZone) => {
+            let distance = this.getDistance(
+                location.coords.latitude, location.coords.longitude,
+                safeZone.coordinates.latitude, safeZone.coordinates.longitude
+            );
+            console.log(distance);
+            if (distance <= safeZone.radius)
+                safeZone.safe = true;
+            else
+                safeZone.safe = false;
+        });
+
+        this.setState({location: location, safeZones: safeZones});
     };
 
     addSafeZone(location, radius) {
@@ -94,7 +120,7 @@ export default class MainScreen extends Component {
     _keyExtractor = (item, index) => item.id.toString();
 
     _renderSafeZone({item}) {
-        return <View style={styles.card}>
+        return <View style={[styles.card, {backgroundColor: item.safe ? 'rgba(0,255,0,0.2)' : 'transparent'}]}>
             <Text>Latitude: {item.coordinates.latitude.toString()}</Text>
             <Text>Longitude: {item.coordinates.longitude.toString()}</Text>
             <Text>Radius: {item.radius.toString()}</Text>
