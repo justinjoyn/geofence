@@ -1,5 +1,5 @@
 import React, {Component} from "react";
-import {Button, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import {FlatList, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import {KeepAwake, Location, Permissions} from "expo";
 import {SafeAreaView} from "react-navigation";
 import {Colors} from "../constants/colors";
@@ -14,7 +14,8 @@ const styles = StyleSheet.create({
         borderColor: Colors.GREY_LIGHT,
         borderRadius: 3,
         borderWidth: 1,
-        padding: 10
+        padding: 10,
+        marginTop: 10
     },
     heading: {
         textAlign: 'center',
@@ -36,7 +37,8 @@ export default class MainScreen extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            location: null
+            location: null,
+            safeZones: []
         }
     }
 
@@ -53,7 +55,7 @@ export default class MainScreen extends Component {
     }
 
     componentDidUpdate() {
-        // console.log(this.state.location);
+        console.log(this.state.safeZones);
     }
 
     askLocationPermission = async function () {
@@ -79,6 +81,33 @@ export default class MainScreen extends Component {
         this.setState({location});
     };
 
+    addSafeZone(location, radius) {
+        let safeZones = this.state.safeZones;
+        safeZones.push({
+            id: safeZones.length + 1,
+            coordinates: location,
+            radius: radius,
+        });
+        this.setState({safeZones: safeZones});
+    }
+
+    _keyExtractor = (item, index) => item.id.toString();
+
+    _renderSafeZone({item}) {
+        return <View style={styles.card}>
+            <Text>Latitude: {item.coordinates.latitude.toString()}</Text>
+            <Text>Longitude: {item.coordinates.longitude.toString()}</Text>
+            <Text>Radius: {item.radius.toString()}</Text>
+            <View style={{marginTop: 10}}>
+                <TouchableOpacity
+                    onPress={() => this.props.navigation.navigate('ViewSafeZoneScreen', {safeZone: item})}
+                    style={styles.button}>
+                    <View><Text style={{textAlign: 'center'}}>View</Text></View>
+                </TouchableOpacity>
+            </View>
+        </View>
+    }
+
     render() {
         return (
             <SafeAreaView style={styles.wrapper}>
@@ -90,15 +119,23 @@ export default class MainScreen extends Component {
                     keyboardShouldPersistTaps={'handled'}>
                     <View style={styles.card}>
                         <Text style={styles.heading}>Current Location</Text>
-                        <Text>Latitude: {this.state.location ? this.state.location.coords.latitude : 'Waiting for GPS'}</Text>
-                        <Text>Longitude: {this.state.location ? this.state.location.coords.longitude : 'Waiting for GPS'}</Text>
+                        <Text>Latitude: {this.state.location ? this.state.location.coords.latitude.toString() : 'Waiting for GPS'}</Text>
+                        <Text>Longitude: {this.state.location ? this.state.location.coords.longitude.toString() : 'Waiting for GPS'}</Text>
                     </View>
                     <View style={{marginTop: 10}}>
                         <TouchableOpacity
-                            onPress={() => this.props.navigation.navigate('AddSafeZoneScreen')}
+                            onPress={() => this.props.navigation.navigate('AddSafeZoneScreen', {addSafeZone: this.addSafeZone.bind(this)})}
                             style={styles.button}>
                             <View><Text style={{textAlign: 'center'}}>Add Safe Zone</Text></View>
                         </TouchableOpacity>
+                    </View>
+                    <View style={styles.card}>
+                        <Text style={styles.heading}>Safe Zones</Text>
+                        <FlatList
+                            style={{flex: 1}}
+                            data={this.state.safeZones}
+                            keyExtractor={this._keyExtractor}
+                            renderItem={this._renderSafeZone.bind(this)}/>
                     </View>
                 </ScrollView>
             </SafeAreaView>

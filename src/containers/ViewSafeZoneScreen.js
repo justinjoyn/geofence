@@ -33,14 +33,24 @@ const styles = StyleSheet.create({
     }
 });
 
-export default class AddSafeZoneScreen extends Component {
+export default class ViewSafeZoneScreen extends Component {
     static navigationOptions = {};
 
     constructor(props) {
         super(props);
+        this.safeZone = null;
         this.state = {
             radius: '',
             mapLocation: null
+        }
+    }
+
+    componentDidMount() {
+        if (this.safeZone) {
+            this.setState({
+                mapLocation: this.safeZone.coordinates,
+                radius: this.safeZone.radius
+            });
         }
     }
 
@@ -55,31 +65,17 @@ export default class AddSafeZoneScreen extends Component {
     }
 
     render() {
-        const addSafeZone = this.props.navigation.getParam('addSafeZone', null);
+        this.safeZone = this.props.navigation.getParam('safeZone', null);
         return (
             <SafeAreaView style={styles.wrapper}>
                 <StatusBar backgroundColor="white" barStyle="dark-content"/>
                 <KeepAwake/>
                 <View style={{flexDirection: 'column', flex: 1}}>
                     <View style={styles.card}>
-                        <Text style={styles.heading}>Selected Location</Text>
+                        <Text style={styles.heading}>Safe Zone</Text>
                         <Text>Latitude: {this.state.mapLocation ? this.state.mapLocation.latitude : 'Select location'}</Text>
                         <Text>Longitude: {this.state.mapLocation ? this.state.mapLocation.longitude : 'Select location'}</Text>
-                    </View>
-                    <View style={[styles.card, {flexDirection: 'row'}]}>
-                        <TextInput style={[styles.inputText, {flex: 1}]}
-                                   placeholder={'Radius'}
-                                   underlineColorAndroid={'transparent'}
-                                   onChangeText={(radius) => this.setState({radius})}
-                                   value={this.state.radius.toString()}/>
-                        <TouchableOpacity
-                            onPress={() => {
-                                addSafeZone(this.state.mapLocation, this.state.radius);
-                                this.props.navigation.goBack();
-                            }}
-                            style={styles.button}>
-                            <View><Text style={{textAlign: 'center'}}>Done</Text></View>
-                        </TouchableOpacity>
+                        <Text>Radius: {this.state.radius ? this.state.radius : 'Select location'}</Text>
                     </View>
                     <View style={[styles.card, {flex: 1, padding: 0}]}>
                         <MapView
@@ -88,15 +84,13 @@ export default class AddSafeZoneScreen extends Component {
                             style={{flex: 1}}
                             onPress={e => this.setState({mapLocation: e.nativeEvent.coordinate})}
                             initialRegion={{
-                                latitude: 10,
-                                longitude: 76,
-                                latitudeDelta: 90,
-                                longitudeDelta: 90,
+                                latitude: this.safeZone.coordinates.latitude,
+                                longitude: this.safeZone.coordinates.longitude,
+                                latitudeDelta: 5,
+                                longitudeDelta: 5,
                             }}>
                             {this.state.mapLocation ?
-                                <MapView.Marker draggable
-                                                coordinate={this.state.mapLocation}
-                                                onDragEnd={(e) => this.setState({mapLocation: e.nativeEvent.coordinate})}/>
+                                <MapView.Marker coordinate={this.state.mapLocation}/>
                                 : null}
                             {this.renderSafeZone()}
                         </MapView>
