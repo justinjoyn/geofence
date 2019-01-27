@@ -79,9 +79,11 @@ export default class MainScreen extends Component {
             dist = 1;
         }
         dist = Math.acos(dist);
-        dist = dist * 180 / Math.PI;
-        dist = dist * 60 * 1.1515;
-        dist = dist * 1.609344;
+        // dist = dist * 180 / Math.PI;
+        // dist = dist * 60 * 1.1515;
+        // dist = dist * 1.609344;
+        // Expression simplified...
+        dist = dist * 6370.69348565 // TODO: Use as constant
         return dist
     }
 
